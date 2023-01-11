@@ -1,14 +1,16 @@
-window.onload = () => {
+window.onload = (e) => {
+    e.preventDefault();
     
-    const apiKey = "at_VRIs0F5PG0aWF3n5Dt7P2DIuPwWfo";
+    const apiKey = "at_RyQrSOg8Wfv6DGEf7mC5tCkBXo85l";
     const geo_loc_URL = `https://geo.ipify.org/api/v2/country,city?apiKey=${apiKey}`
 
     const ipResult    = document.querySelector('.ip');
     const locResult   = document.querySelector('.location');
     const timerResult = document.querySelector('.time-zone');
     const ispResult   = document.querySelector('.isp');
-    const srchBtn     = document.querySelector('.search-btn');
     const srchBar     = document.querySelector('input[type=text]');
+    const formInput   = document.querySelector('#form-input');
+
     const markerIcon = L.icon({
         iconUrl: './assets/images/icon-location.svg',
         iconSize: [30, 40],
@@ -19,8 +21,7 @@ window.onload = () => {
     //initialise the map
 
     let marker;
-    var map = L.map('map').setView([0, 0], 3);//set the location map
-    var popup = L.popup();//set popup by clicking on the map
+    let map = L.map('map').setView([0, 0], 3);//set the location map
     
     //display the map on the page 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -29,30 +30,15 @@ window.onload = () => {
     }).addTo(map);
 
     
-    function onMapClick(e) {
-        popup
-            .setLatLng(e.latlng)
-            .setContent("You clicked the map at " + e.latlng.toString())
-            .openOn(map);
-    }
-
-    map.on('click', onMapClick);
-    
-
-    
     const get_ip_info = async (ipToLocate =  '') => {
         try {
-
         const res = await fetch(`${geo_loc_URL}&ipAdress=${ipToLocate}`);
         const ipData = await res.json();
         updateMap(ipData);
         }
         catch{
-            console.log(error);
-            alert('Enable to find given domain or ip');
-        }
-
-        
+            //alert('Enable to find given IP');
+        }        
     };
 
     const get_domain_info = async (domainToLocate =  '') => {
@@ -60,44 +46,55 @@ window.onload = () => {
 
         const res = await fetch(`${geo_loc_URL}&ipAdress=${domainToLocate}`);
         const ipData = await res.json();
+
         updateMap(ipData);
         }
         catch{
-            console.log(error);
-            alert('Enable to find given domain or ip');
+            //alert('Enable to find given domain or ip');
         }
+    };
 
+
+
+    const updateMap = (data) => {
+        
+       
+
+        const { ip, location, isp } = data;//ref the data respnse as object
+
+        // card info
+        ipResult.innerHTML    = ip;
+        ispResult.innerHTML   = isp;
+        locResult.innerHTML   = `${location.region} ${location.city}` +' '+ `${location.postalCode}`;
+        timerResult.innerHTML = `UTC${location.timezone}`;   
+
+        map.setView([location.lat, location.lng]);
+
+        if(!marker){// create the marker on the map
+            marker = L.marker([location.lat, location.lng],{icon: markerIcon}).addTo(map)  ;
+        }else {// move the marker on the mape
+            marker.setLatLng([location.lat, location.lng]);
+        }
+        
+        map.flyTo([location.lat, location.lng], 8);//change map location
+
+       
+            
         
     };
 
-
-
-    const updateMap = (ipData) => {
-
-        map.setView([ipData.location.lat, ipData.location.lng]);
-
-        if(!marker){
-            marker = L.marker([ipData.location.lat, ipData.location.lng],{icon: markerIcon}).addTo(map)  ;
-        }else {
-            marker.setLatLng([ipData.location.lat, ipData.location.lng]);
-        }
-            
-        ipResult.innerHTML    = `${ipData.ip}`;
-        const ipLocation      = ipData.location;
-        locResult.innerHTML   = `${ipLocation.region} <br> ${ipLocation.city}` +' '+ `${ipLocation.postalCode}`;
-        timerResult.innerHTML = `UTC${ipLocation.timezone}`;
-        ispResult.innerHTML   = `${ipData.isp}`;   
-    };
-
-    srchBar.addEventListener('keypress', (e)=>{
+    formInput.addEventListener('submit', (e)=>{
         let userVal = srchBar.value;
-        if (e.keyCode === 13) {
-            e.preventDefault();
-            get_ip_info();
-            get_domain_info();
-            srchBar.value = '';
-        }
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target));
+        const IP_OR_DOMAIN = data['search-bar'];
+        const ip_regexp = new RegExp(
+          /(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d{1})\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d{1})/g,
+        );
+      
+        if (ip_regexp.test(IP_OR_DOMAIN)) get_ip_info(IP_OR_DOMAIN);
+        else get_domain_info(IP_OR_DOMAIN);
     });
 
-    get_ip_info();
+   get_ip_info();
 }
