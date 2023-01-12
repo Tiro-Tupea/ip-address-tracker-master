@@ -16,6 +16,7 @@ window.onload = (e) => {
     /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/gi;
     const checkDomain =
     /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+/;
+
     const markerIcon = L.icon({
         iconUrl: './assets/images/icon-location.svg',
         iconSize: [30, 40],
@@ -34,58 +35,50 @@ window.onload = (e) => {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
-    
-    const get_ip_info = async (ipToLocate =  '') => {
+    // Get api data 
+    const get_data = async (ip_or_domain) => {
         try {
-        const res = await fetch(`${geo_loc_URL}&=${checkIpAddress.test (ipToLocate) ? `ipAddress=${ipToLocate}` : "" }`);
-        const data = await res.json();
-        return data;
-        }
-        catch(eror){
-            console.log(error)
-            //alert('Enable to find given domain or ip');
-        }
-    };
+            const response = await fetch(`${geo_loc_URL}&${
+                //check the user values
+                checkIpAddress.test(ip_or_domain) ? `ipAddress=${ip_or_domain}` : checkDomain.test(ip_or_domain)
+                ? `domain=${ip_or_domain}` : "" }`);
 
-    const get_domain_info = async (domainToLocate =  '') => {
-        try {
-
-        const res = await fetch(`${geo_loc_URL}&${checkDomain.test (domainToLocate) ? `domain=${domainToLocate}` : "" }`);
-        const data = await res.json();
-
-        return updateMap(data);
+            const data = await response.json();
+            console.log(data);
+            updateMap(data);
+        } catch(error) {
+            console.log(error);
         }
-        catch(error){
-            console.log(error)
-            //alert('Enable to find given domain or ip');
-        }
+
     };
 
 
 
-    const updateMap = (data) => {
-        
-        const { ip, location, isp } = data;//ref the data response as object
+    function updateMap(data) {
 
-        map.flyTo([location.lat, location.lng], 8);//change map location
+        const { ip, location, isp } = data; //ref the data response as object
+
+        map.flyTo([location.lat, location.lng], 8); //change map location
+
         // card info
-        ipResult.innerHTML    = ip;
-        ispResult.innerHTML   = isp;
-        locResult.innerHTML   = `${location.region} ${location.city}` +' '+ `${location.postalCode}`;
-        timerResult.innerHTML = `UTC${location.timezone}`;   
+        ipResult.innerHTML = ip;
+        ispResult.innerHTML = isp;
+        locResult.innerHTML = `${location.region} ${location.city}` + ' ' + `${location.postalCode}`;
+        timerResult.innerHTML = `UTC${location.timezone}`;
 
-        if(!marker){// create the marker on the map
-            marker = L.marker([location.lat, location.lng],{icon: markerIcon}).addTo(map)  ;
-        }else {// move the marker on the mape
+        if (!marker) { // create the marker on the map
+            marker = L.marker([location.lat, location.lng], { icon: markerIcon }).addTo(map);
+        } else { // move the marker on the mape
             marker.setLatLng([location.lat, location.lng]);
         }
-      
-    };
+
+    }
 
     formInput.addEventListener('submit', (e)=>{
         e.preventDefault();
+        get_data();
         
     });
 
-   get_domain_info('');
+   
 }
