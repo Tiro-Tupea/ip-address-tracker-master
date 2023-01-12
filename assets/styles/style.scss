@@ -52,6 +52,8 @@ body {
             border-style: none;
             border-radius: 0 15px 15px 0;
             background-color: $veryDarkGrey;
+            position: relative;
+            bottom: 1px;
 
             &:hover {
                 cursor: pointer;
