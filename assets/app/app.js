@@ -36,7 +36,7 @@ window.onload = (e) => {
     }).addTo(map);
 
     // Get api data 
-    const get_data = async (ip_or_domain) => {
+    const get_data = async (ip_or_domain = '') => {
         try {
             const response = await fetch(`${geo_loc_URL}&${
                 //check the user values
@@ -75,10 +75,13 @@ window.onload = (e) => {
     }
 
     formInput.addEventListener('submit', (e)=>{
+        let data = srchBar.value;
         e.preventDefault();
-        get_data();
+        get_data(data);
         
     });
 
+    //default Api value 
+    get_data('');
    
 }
